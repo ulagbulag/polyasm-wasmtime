@@ -199,7 +199,7 @@
 (decl amode (Value Offset32) Amode)
 (rule (amode addr offset)
   (if-let (ValueOffset.Both a o) (amode_base addr offset))
-  (Amode.RegOffset a o))
+  (Amode.RegOffset (memory_base a) o))
 
 ;;; ISLE representation of the `AddrO32` ("*_o32") addressing mode in Pulley.
 (type AddrO32
@@ -212,7 +212,7 @@
 (decl addro32 (Value Offset32) AddrO32)
 (rule (addro32 addr offset)
   (if-let (ValueOffset.Both reg off32) (amode_base addr offset))
-  (AddrO32.Base reg off32))
+  (AddrO32.Base (memory_base reg) off32))
 
 ;;; ISLE representation of the `AddrZ` ("*_z") addressing mode in Pulley.
 (type AddrZ
@@ -225,7 +225,7 @@
 (decl addrz (Value Offset32) AddrZ)
 (rule (addrz addr offset)
   (if-let (ValueOffset.Both reg off32) (amode_base addr offset))
-  (AddrZ.Base reg off32))
+  (AddrZ.Base (memory_base reg) off32))
 
 ;;; ISLE representation of the `AddrG32` ("*_g32") addressing mode in Pulley.
 (type AddrG32
@@ -295,6 +295,15 @@
 (decl pure pointer_width () PointerWidth)
 (extern constructor pointer_width pointer_width)
 
+;; Pulley leaves the upper half of an I32 result unchanged. Pulley32 memory
+;; bases therefore need one explicit zero extension at the dereference
+;; boundary; full-width values and every Pulley64 base remain untouched.
+(decl memory_base (Value) XReg)
+(rule 1 (memory_base value @ (value_type $I32))
+  (if-let (PointerWidth.PointerWidth32) (pointer_width))
+  (pulley_zext32 value))
+(rule 0 (memory_base value) value)
+
 (decl pure memflags_nontrapping (MemFlags) bool)
 (extern constructor memflags_nontrapping memflags_nontrapping)
 
@@ -307,7 +316,11 @@
 ;; Auto-conversion from `G32` to `AddrG32`.
 (decl gen_addrg32 (G32) AddrG32)
 (rule (gen_addrg32 (G32.All base bound wasm offset))
-  (AddrG32.RegisterBound base bound wasm offset))
+  (AddrG32.RegisterBound
+    (memory_base base)
+    (memory_base bound)
+    wasm
+    offset))
 (convert G32 AddrG32 gen_addrg32)
 
 ;; Helper type to represent a "pending" `AddrG32Bne` value.
@@ -320,9 +333,14 @@
 (convert G32Bne AddrG32Bne gen_addrg32bne)
 
 ;; Small workaround to pattern-match `SunkLoad` here.
-(decl gen_addrg32bne_for_real (XReg SunkLoad XReg u8) AddrG32Bne)
+(decl gen_addrg32bne_for_real (Value SunkLoad Value u8) AddrG32Bne)
 (rule (gen_addrg32bne_for_real base (SunkLoad.Load _ bound_addr bound_offset) wasm_addr offset)
-  (AddrG32Bne.BoundNe base bound_addr bound_offset wasm_addr offset))
+  (AddrG32Bne.BoundNe
+    (memory_base base)
+    (memory_base bound_addr)
+    bound_offset
+    wasm_addr
+    offset))
 
 ;; Helper to extract `G32Bne` from `G32` if applicable.
 ;;

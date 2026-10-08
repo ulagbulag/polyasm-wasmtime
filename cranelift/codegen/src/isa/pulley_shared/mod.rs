@@ -33,6 +33,12 @@ pub trait PulleyTargetKind: 'static + Clone + Debug + Default + Send + Sync {
 
     fn pointer_width() -> PointerWidth;
 
+    /// Whether this is the no-OS interchange profile whose integer register
+    /// allocation has to fit the narrowest PolyASM machine.
+    fn compact_integer_registers() -> bool {
+        false
+    }
+
     // Provided methods. Don't overwrite.
 
     fn name() -> &'static str {
@@ -255,10 +261,13 @@ where
 
 /// Create a new Pulley ISA builder.
 pub fn isa_builder(triple: Triple) -> IsaBuilder {
-    let constructor = match triple.architecture {
-        Architecture::Pulley32 | Architecture::Pulley32be => isa_constructor_32,
-        Architecture::Pulley64 | Architecture::Pulley64be => isa_constructor_64,
-        other => panic!("unexpected architecture {other:?}"),
+    let bare = triple.operating_system == target_lexicon::OperatingSystem::None_;
+    let constructor = match (triple.architecture, bare) {
+        (Architecture::Pulley32 | Architecture::Pulley32be, false) => isa_constructor_32,
+        (Architecture::Pulley32 | Architecture::Pulley32be, true) => isa_constructor_32_bare,
+        (Architecture::Pulley64 | Architecture::Pulley64be, false) => isa_constructor_64,
+        (Architecture::Pulley64 | Architecture::Pulley64be, true) => isa_constructor_64_bare,
+        (other, _) => panic!("unexpected architecture {other:?}"),
     };
     IsaBuilder {
         triple,
@@ -285,6 +294,27 @@ fn isa_constructor_32(
     Ok(backend.wrapped())
 }
 
+fn isa_constructor_32_bare(
+    triple: Triple,
+    shared_flags: Flags,
+    builder: &shared_settings::Builder,
+) -> CodegenResult<OwnedTargetIsa> {
+    use crate::settings::Configurable;
+    let mut builder = builder.clone();
+    builder.set("pointer_width", "pointer32").unwrap();
+    if triple.endianness().unwrap() == target_lexicon::Endianness::Big {
+        builder.enable("big_endian").unwrap();
+    }
+    let isa_flags = PulleyFlags::new(&shared_flags, &builder);
+
+    let backend = PulleyBackend::<super::pulley32::BarePulley32>::new_with_flags(
+        triple,
+        shared_flags,
+        isa_flags,
+    );
+    Ok(backend.wrapped())
+}
+
 fn isa_constructor_64(
     triple: Triple,
     shared_flags: Flags,
@@ -300,6 +330,27 @@ fn isa_constructor_64(
 
     let backend =
         PulleyBackend::<super::pulley64::Pulley64>::new_with_flags(triple, shared_flags, isa_flags);
+    Ok(backend.wrapped())
+}
+
+fn isa_constructor_64_bare(
+    triple: Triple,
+    shared_flags: Flags,
+    builder: &shared_settings::Builder,
+) -> CodegenResult<OwnedTargetIsa> {
+    use crate::settings::Configurable;
+    let mut builder = builder.clone();
+    builder.set("pointer_width", "pointer64").unwrap();
+    if triple.endianness().unwrap() == target_lexicon::Endianness::Big {
+        builder.enable("big_endian").unwrap();
+    }
+    let isa_flags = PulleyFlags::new(&shared_flags, &builder);
+
+    let backend = PulleyBackend::<super::pulley64::BarePulley64>::new_with_flags(
+        triple,
+        shared_flags,
+        isa_flags,
+    );
     Ok(backend.wrapped())
 }
 

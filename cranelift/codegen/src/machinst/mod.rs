@@ -85,6 +85,7 @@ pub mod valueregs;
 pub use reg::*;
 pub use valueregs::*;
 pub mod reg;
+mod regalloc_order;
 
 /// A machine instruction.
 pub trait MachInst: Clone + Debug {

@@ -769,6 +769,35 @@ impl<I: VCodeInst> VCode<I> {
         }
         final_order.extend(cold_blocks.clone());
 
+        // The blocks a later block of the emission order branches back to:
+        // the loop headers `log2_loop_alignment` aligns. A cold block stands
+        // past every other block, so its branches back name zero loops.
+        let log2_loop_alignment = flags.log2_loop_alignment();
+        let mut loop_headers: SmallVec<[bool; 16]> = smallvec![false; self.num_blocks()];
+        if log2_loop_alignment > 0 {
+            let mut position: SmallVec<[usize; 16]> = smallvec![0; self.num_blocks()];
+            for (at, block) in final_order.iter().enumerate() {
+                position[block.index()] = at;
+            }
+            for block in final_order.iter() {
+                if self.block_order.is_cold(*block) {
+                    continue;
+                }
+                let preds = &self.block_preds[self.block_pred_range.get(block.index())];
+                if preds.iter().any(|pred| {
+                    !self.block_order.is_cold(*pred)
+                        && position[pred.index()] >= position[block.index()]
+                }) {
+                    loop_headers[block.index()] = true;
+                }
+            }
+            // A function holding a loop starts at the loop alignment, so an
+            // aligned offset in the function is an aligned address.
+            if loop_headers.iter().any(|header| *header) {
+                buffer.set_log2_min_function_alignment(log2_loop_alignment);
+            }
+        }
+
         // Compute/save info we need for the prologue: clobbers and
         // number of spillslots.
         //
@@ -834,6 +863,16 @@ impl<I: VCodeInst> VCode<I> {
                 nop.emit(&mut buffer, &self.emit_info, &mut Default::default());
             }
             assert_eq!(buffer.cur_offset(), new_offset);
+
+            // Emit NOPs to align a loop header.
+            if loop_headers[block.index()] {
+                let alignment = 1_u32 << log2_loop_alignment;
+                let new_offset = (buffer.cur_offset() + alignment - 1) & !(alignment - 1);
+                while new_offset > buffer.cur_offset() {
+                    let nop = I::gen_nop((new_offset - buffer.cur_offset()) as usize);
+                    nop.emit(&mut buffer, &self.emit_info, &mut Default::default());
+                }
+            }
 
             let do_emit = |inst: &I,
                            disasm: &mut String,

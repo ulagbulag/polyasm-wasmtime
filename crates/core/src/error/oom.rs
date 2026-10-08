@@ -207,6 +207,13 @@ impl OutOfMemory {
     }
 }
 
+impl From<cranelift_bitset::oom::OutOfMemory> for OutOfMemory {
+    #[inline]
+    fn from(oom: cranelift_bitset::oom::OutOfMemory) -> Self {
+        Self::new(oom.requested_allocation_size())
+    }
+}
+
 impl From<OutOfMemory> for OomOrDynError {
     fn from(oom: OutOfMemory) -> Self {
         OomOrDynError::new_oom(oom.inner)

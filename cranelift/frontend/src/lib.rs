@@ -154,6 +154,7 @@
 #![deny(missing_docs)]
 #![no_std]
 
+#[cfg_attr(not(feature = "std"), macro_use)]
 extern crate alloc;
 
 #[cfg(feature = "std")]

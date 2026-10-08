@@ -187,12 +187,12 @@ where
 
     /// Same as [`cranelift_entity::PrimaryMap::try_reserve`].
     pub fn reserve(&mut self, additional: usize) -> Result<(), OutOfMemory> {
-        self.inner.try_reserve(additional)
+        self.inner.try_reserve(additional).map_err(Into::into)
     }
 
     /// Same as [`cranelift_entity::PrimaryMap::try_reserve_exact`].
     pub fn reserve_exact(&mut self, additional: usize) -> Result<(), OutOfMemory> {
-        self.inner.try_reserve_exact(additional)
+        self.inner.try_reserve_exact(additional).map_err(Into::into)
     }
 
     /// Same as [`cranelift_entity::PrimaryMap::get_disjoint_mut`].

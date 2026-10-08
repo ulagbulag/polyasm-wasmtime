@@ -11,7 +11,7 @@ use core::{
     mem,
     ops::{Bound, RangeBounds},
 };
-use wasmtime_core::{alloc::PanicOnOom as _, error::OutOfMemory};
+use cranelift_bitset::oom::{OutOfMemory, PanicOnOom as _};
 
 /// Tag type defining forest types for a map.
 struct MapTypes<K, V>(PhantomData<(K, V)>);

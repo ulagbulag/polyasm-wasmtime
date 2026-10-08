@@ -4,7 +4,7 @@ use super::node::Removed;
 use super::{Comparator, Forest, MAX_PATH, Node, NodeData, NodePool, slice_insert, slice_shift};
 use core::borrow::Borrow;
 use core::marker::PhantomData;
-use wasmtime_core::error::OutOfMemory;
+use cranelift_bitset::oom::OutOfMemory;
 
 #[cfg(test)]
 use core::fmt;
@@ -711,7 +711,7 @@ impl<F: Forest> fmt::Display for Path<F> {
 
 #[cfg(test)]
 mod tests {
-    use wasmtime_core::alloc::PanicOnOom;
+    use cranelift_bitset::oom::PanicOnOom;
 
     use super::*;
     use core::cmp::Ordering;

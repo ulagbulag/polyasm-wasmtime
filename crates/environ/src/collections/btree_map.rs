@@ -98,7 +98,7 @@ where
             }
             Err(oom) => {
                 self.values.dealloc(id);
-                Err(oom)
+                Err(oom.into())
             }
         }
     }
@@ -496,7 +496,7 @@ where
                     }
                     Err(oom) => {
                         e.values.dealloc(id);
-                        Err(oom)
+                        Err(oom.into())
                     }
                 }
             }
@@ -645,7 +645,7 @@ where
             }
             Err(oom) => {
                 self.values.dealloc(id);
-                Err(oom)
+                Err(oom.into())
             }
         }
     }

@@ -31,7 +31,7 @@ where
 
     /// Ensure that there is enough capacity to hold `capacity` total elements.
     pub fn ensure_capacity(&mut self, capacity: usize) -> Result<(), OutOfMemory> {
-        self.inner.try_ensure_capacity(capacity)
+        self.inner.try_ensure_capacity(capacity).map_err(Into::into)
     }
 
     /// Is this set completely empty?

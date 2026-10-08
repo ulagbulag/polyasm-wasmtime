@@ -62,14 +62,19 @@ pub fn compile<B: LowerBackend + TargetIsa>(
             RegallocAlgorithm::SinglePass => Algorithm::Fastalloc,
         };
 
-        regalloc2::run(&vcode, vcode.abi.machine_env(), &options)
-            .map_err(|err| {
-                log::error!(
-                    "Register allocation error for vcode\n{vcode:?}\nError: {err:?}\nCLIF for error:\n{f:?}",
-                );
-                err
-            })
-            .expect("register allocation")
+        super::regalloc_order::run(
+            &vcode,
+            vcode.abi.machine_env(),
+            &options,
+            b.flags().regalloc_integer_order(),
+        )
+        .map_err(|err| {
+            log::error!(
+                "Register allocation error for vcode\n{vcode:?}\nError: {err:?}\nCLIF for error:\n{f:?}",
+            );
+            err
+        })
+        .expect("register allocation")
     };
 
     // Run the regalloc checker, if requested.

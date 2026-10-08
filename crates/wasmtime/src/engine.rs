@@ -499,12 +499,14 @@ information about this check\
             | "is_pic"
             | "bb_padding_log2_minus_one"
             | "log2_min_function_alignment"
+            | "log2_loop_alignment" // NOPs ahead of a loop header
             | "machine_code_cfg_info"
             | "tls_model" // wasmtime doesn't use tls right now
             | "opt_level" // opt level doesn't change semantics
             | "enable_alias_analysis" // alias analysis-based opts don't change semantics
             | "probestack_size_log2" // probestack above asserted disabled
             | "regalloc" // shouldn't change semantics
+            | "regalloc_integer_order" // a permutation of the same allocation
             | "enable_incremental_compilation_cache_checks" // shouldn't change semantics
             | "enable_atomics" => return Ok(()),
 

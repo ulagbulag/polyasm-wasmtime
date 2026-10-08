@@ -9,13 +9,13 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ops::{Index, IndexMut};
 use core::slice;
+use cranelift_bitset::oom::{OutOfMemory, PanicOnOom as _};
 #[cfg(feature = "enable-serde")]
 use serde::{
     Deserialize, Serialize,
     de::{Deserializer, SeqAccess, Visitor},
     ser::{SerializeSeq, Serializer},
 };
-use wasmtime_core::{alloc::PanicOnOom as _, error::OutOfMemory};
 
 /// A mapping `K -> V` for densely indexed entity references.
 ///

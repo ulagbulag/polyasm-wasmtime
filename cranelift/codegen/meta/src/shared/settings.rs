@@ -44,6 +44,18 @@ pub(crate) fn define() -> SettingGroup {
         vec!["backtracking", "single_pass"],
     );
 
+    settings.add_num(
+        "regalloc_integer_order",
+        "Select the physical integer-register allocation order.",
+        r#"
+            Zero retains the target's ordinary order. Other values permute the
+            allocator's physical register coordinates and restore them before
+            emission. Fixed operands, clobbers, register preferences, and
+            register-range constraints retain their target meaning.
+        "#,
+        0,
+    );
+
     settings.add_enum(
         "opt_level",
         "Optimization level for generated code.",
@@ -353,6 +365,14 @@ pub(crate) fn define() -> SettingGroup {
         "log2_min_function_alignment",
         "The log2 of the minimum alignment of functions",
         "The bigger of this value and the default alignment will be used as actual alignment.",
+        0,
+    );
+
+    settings.add_num(
+        "log2_loop_alignment",
+        "The log2 of the alignment of loop header blocks",
+        "A block that a later block of the emission order branches back to starts at this \
+         alignment, padded with NOPs; zero leaves every block where it falls.",
         0,
     );
 

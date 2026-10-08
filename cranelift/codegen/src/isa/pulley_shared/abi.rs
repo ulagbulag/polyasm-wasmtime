@@ -66,7 +66,11 @@ where
         // not used for arguments. This is used in `ReturnCallIndirect` to hold
         // the location of where we're jumping to.
 
-        let x_end = 14;
+        let x_end = if P::compact_integer_registers() {
+            3
+        } else {
+            14
+        };
         let f_end = 15;
         let v_end = 15;
 
@@ -481,7 +485,12 @@ where
 
     fn get_machine_env(_flags: &settings::Flags, _call_conv: isa::CallConv) -> &MachineEnv {
         static MACHINE_ENV: MachineEnv = create_reg_environment();
-        &MACHINE_ENV
+        static COMPACT_MACHINE_ENV: MachineEnv = create_compact_reg_environment();
+        if P::compact_integer_registers() {
+            &COMPACT_MACHINE_ENV
+        } else {
+            &MACHINE_ENV
+        }
     }
 
     fn get_regs_clobbered_by_call(
@@ -560,9 +569,14 @@ where
     }
 
     fn retval_temp_reg(_call_conv_of_callee: isa::CallConv) -> Writable<Reg> {
-        // Use x15 as a temp if needed: clobbered, not a
-        // retval.
-        Writable::from_reg(regs::x_reg(15))
+        // The compact interchange bank reserves x7 for the same role x15 has
+        // in hosted Pulley: a caller-saved temporary outside the arguments.
+        let register = if P::compact_integer_registers() {
+            7
+        } else {
+            15
+        };
+        Writable::from_reg(regs::x_reg(register))
     }
 
     fn exception_payload_regs(call_conv: isa::CallConv) -> &'static [Reg] {
@@ -1090,4 +1104,24 @@ const fn create_reg_environment() -> MachineEnv {
         fixed_stack_slots: vec![],
         scratch_by_class: [None, None, None],
     }
+}
+
+/// The integer bank common to PolyASM's narrow machines.
+///
+/// Seven registers participate in allocation and x7 remains available for
+/// ABI temporaries. Floating and vector banks keep Pulley's layout: a machine
+/// without them leaves their opcodes outside its capability set, while
+/// machines with them retain Pulley's full banks.
+const fn create_compact_reg_environment() -> MachineEnv {
+    let mut environment = create_reg_environment();
+    environment.preferred_regs_by_class[0] = PRegSet::empty()
+        .with(px_reg(0))
+        .with(px_reg(1))
+        .with(px_reg(2))
+        .with(px_reg(3))
+        .with(px_reg(4))
+        .with(px_reg(5))
+        .with(px_reg(6));
+    environment.non_preferred_regs_by_class[0] = PRegSet::empty();
+    environment
 }

@@ -11,3 +11,17 @@ impl PulleyTargetKind for Pulley64 {
         PointerWidth::PointerWidth64
     }
 }
+
+/// The no-OS Pulley profile used as PolyASM's compiler interchange.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct BarePulley64;
+
+impl PulleyTargetKind for BarePulley64 {
+    fn pointer_width() -> PointerWidth {
+        PointerWidth::PointerWidth64
+    }
+
+    fn compact_integer_registers() -> bool {
+        true
+    }
+}

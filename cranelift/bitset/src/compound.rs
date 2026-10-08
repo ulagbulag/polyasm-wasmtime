@@ -1,10 +1,9 @@
 //! Compound bit sets.
 
+use crate::oom::OutOfMemory;
 use crate::scalar::{self, ScalarBitSet, ScalarBitSetStorage};
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec::Vec};
 use core::{cmp, iter, mem};
-use wasmtime_core::alloc::{TryExtend, TryVec};
-use wasmtime_core::error::OutOfMemory;
 
 /// A large bit set backed by dynamically-sized storage.
 ///
@@ -295,10 +294,13 @@ impl<T: ScalarBitSetStorage> CompoundBitSet<T> {
         // Don't make ridiculously small allocations.
         let to_grow = cmp::max(to_grow, 4);
 
-        let mut new_elems = TryVec::from(mem::take(&mut self.elems));
-        new_elems.reserve_exact(to_grow)?;
-        new_elems.try_extend(iter::repeat(ScalarBitSet::new()).take(to_grow))?;
-        self.elems = new_elems.into_boxed_slice()?;
+        let mut new_elems = Vec::from(mem::take(&mut self.elems));
+        let new_len = new_elems.len().saturating_add(to_grow);
+        new_elems.try_reserve_exact(to_grow).map_err(|_| {
+            OutOfMemory::new(mem::size_of::<ScalarBitSet<T>>().saturating_mul(new_len))
+        })?;
+        new_elems.extend(iter::repeat(ScalarBitSet::new()).take(to_grow));
+        self.elems = new_elems.into_boxed_slice();
         Ok(())
     }
 

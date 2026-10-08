@@ -169,15 +169,11 @@ fn pulley_emit<P>(
         Inst::Call { info } => {
             let start = sink.cur_offset();
 
-            // If arguments happen to already be in the right register for the
-            // ABI then remove them from this list. Otherwise emit the
-            // appropriate `Call` instruction depending on how many arguments we
-            // have that aren't already in their correct register according to
-            // ABI conventions.
-            let mut args = &info.dest.args[..];
-            while !args.is_empty() && args.last().copied() == XReg::new(x_reg(args.len() - 1)) {
-                args = &args[..args.len() - 1];
-            }
+            // Keep every register argument explicit even when it is already in
+            // its ABI destination. Besides performing Pulley's parallel move,
+            // the opcode then carries the call arity needed by PolyASM machines
+            // whose physical call ABI differs from Pulley's.
+            let args = &info.dest.args[..];
             patch_pc_rel_offset(sink, |sink| match args {
                 [] => enc::call(sink, 0),
                 [x0] => enc::call1(sink, x0, 0),

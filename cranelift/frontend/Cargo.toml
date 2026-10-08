@@ -15,7 +15,9 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-cranelift-codegen = { workspace = true }
+# Inherited by path rather than by workspace: the workspace entry pins
+# `std`, which this crate must leave to its own `std`/`core` features.
+cranelift-codegen = { path = "../codegen", version = "0.132.2", default-features = false }
 target-lexicon = { workspace = true }
 log = { workspace = true }
 hashbrown = { workspace = true, optional = true }

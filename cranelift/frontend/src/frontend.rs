@@ -242,7 +242,7 @@ impl fmt::Display for UseVariableError {
     }
 }
 
-impl std::error::Error for UseVariableError {}
+impl core::error::Error for UseVariableError {}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 /// An error encountered when defining the initial value of a variable.
@@ -1107,8 +1107,8 @@ impl<'a> FunctionBuilder<'a> {
         left: Value,
         right: Value,
         size: u64,
-        left_align: std::num::NonZeroU8,
-        right_align: std::num::NonZeroU8,
+        left_align: core::num::NonZeroU8,
+        right_align: core::num::NonZeroU8,
         flags: MemFlags,
     ) -> Value {
         use IntCC::*;
