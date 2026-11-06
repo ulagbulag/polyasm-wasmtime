@@ -1,17 +1,19 @@
 //! Densely numbered entity references as mapping keys.
-use crate::EntityRef;
-use crate::boxed_slice::BoxedSlice;
-use crate::iter::{IntoIter, Iter, IterMut};
-use crate::keys::Keys;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;
 use core::marker::PhantomData;
 use core::ops::{Index, IndexMut};
 use core::slice;
+
+use cranelift_bitset::oom::OutOfMemory;
 #[cfg(feature = "enable-serde")]
 use serde_derive::{Deserialize, Serialize};
-use wasmtime_core::error::OutOfMemory;
+
+use crate::EntityRef;
+use crate::boxed_slice::BoxedSlice;
+use crate::iter::{IntoIter, Iter, IterMut};
+use crate::keys::Keys;
 
 /// A primary mapping `K -> V` allocating dense entity references.
 ///

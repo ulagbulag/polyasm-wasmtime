@@ -5,7 +5,7 @@ use crate::keys::Keys;
 use core::fmt;
 use core::marker::PhantomData;
 use cranelift_bitset::CompoundBitSet;
-use wasmtime_core::error::OutOfMemory;
+use cranelift_bitset::oom::OutOfMemory;
 
 /// A set of `K` for densely indexed entity references.
 ///

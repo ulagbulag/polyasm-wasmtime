@@ -1,13 +1,14 @@
 //! A path from the root of a B+-tree to a leaf node.
 
-use super::node::Removed;
-use super::{Comparator, Forest, MAX_PATH, Node, NodeData, NodePool, slice_insert, slice_shift};
 use core::borrow::Borrow;
-use core::marker::PhantomData;
-use wasmtime_core::error::OutOfMemory;
-
 #[cfg(test)]
 use core::fmt;
+use core::marker::PhantomData;
+
+use cranelift_bitset::oom::OutOfMemory;
+
+use super::node::Removed;
+use super::{Comparator, Forest, MAX_PATH, Node, NodeData, NodePool, slice_insert, slice_shift};
 
 pub(super) struct Path<F: Forest> {
     /// Number of path entries including the root and leaf nodes.
@@ -711,7 +712,7 @@ impl<F: Forest> fmt::Display for Path<F> {
 
 #[cfg(test)]
 mod tests {
-    use wasmtime_core::alloc::PanicOnOom;
+    use cranelift_bitset::oom::PanicOnOom;
 
     use super::*;
     use core::cmp::Ordering;

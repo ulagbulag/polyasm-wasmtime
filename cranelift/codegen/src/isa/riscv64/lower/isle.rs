@@ -24,7 +24,46 @@ use crate::{
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use regalloc2::PReg;
-use wasmtime_core::math::{f32_cvt_to_int_bounds, f64_cvt_to_int_bounds};
+
+/// Returns the bounds for guarding a trapping f32-to-int conversion.
+///
+/// This function returns a lower bound and an upper bound: the float being
+/// converted must be greater than the lower bound and less than the upper
+/// bound for the conversion to proceed, otherwise a trap or a saturated value
+/// is produced.
+///
+/// The `signed` argument indicates whether a conversion to a signed integer is
+/// happening; if `false` a conversion to an unsigned integer is happening. The
+/// `out_bits` argument indicates how many bits are in the integer being
+/// converted to.
+const fn f32_cvt_to_int_bounds(signed: bool, out_bits: u32) -> (f32, f32) {
+    match (signed, out_bits) {
+        (true, 8) => (i8::MIN as f32 - 1., i8::MAX as f32 + 1.),
+        (true, 16) => (i16::MIN as f32 - 1., i16::MAX as f32 + 1.),
+        (true, 32) => (-2147483904.0, 2147483648.0),
+        (true, 64) => (-9223373136366403584.0, 9223372036854775808.0),
+        (false, 8) => (-1., u8::MAX as f32 + 1.),
+        (false, 16) => (-1., u16::MAX as f32 + 1.),
+        (false, 32) => (-1., 4294967296.0),
+        (false, 64) => (-1., 18446744073709551616.0),
+        _ => unreachable!(),
+    }
+}
+
+/// Same as [`f32_cvt_to_int_bounds`] but used for f64-to-int conversions.
+const fn f64_cvt_to_int_bounds(signed: bool, out_bits: u32) -> (f64, f64) {
+    match (signed, out_bits) {
+        (true, 8) => (i8::MIN as f64 - 1., i8::MAX as f64 + 1.),
+        (true, 16) => (i16::MIN as f64 - 1., i16::MAX as f64 + 1.),
+        (true, 32) => (-2147483649.0, 2147483648.0),
+        (true, 64) => (-9223372036854777856.0, 9223372036854775808.0),
+        (false, 8) => (-1., u8::MAX as f64 + 1.),
+        (false, 16) => (-1., u16::MAX as f64 + 1.),
+        (false, 32) => (-1., 4294967296.0),
+        (false, 64) => (-1., 18446744073709551616.0),
+        _ => unreachable!(),
+    }
+}
 
 type BoxCallInfo = Box<CallInfo<ExternalName>>;
 type BoxCallIndInfo = Box<CallInfo<Reg>>;

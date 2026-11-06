@@ -11,6 +11,9 @@ version.workspace = true
 # This crate should have *very* minimal dependencies! Don't add new ones
 # lightly.
 anyhow = { workspace = true, optional = true }
+# Cranelift reports allocation failure with its own `OutOfMemory`; this
+# crate adapts it into ours so that `?` keeps working across the boundary.
+cranelift-bitset = { workspace = true }
 hashbrown = { workspace = true, features = ["default-hasher"] }
 libm = { workspace = true }
 serde = { workspace = true, optional = true }

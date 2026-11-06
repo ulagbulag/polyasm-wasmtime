@@ -510,6 +510,23 @@
 (rule (lower (ishl $I64 a b))
   (pulley_xshl64 a (lo_xreg b)))
 
+(rule 2 (lower (ishl $I128 a b))
+  (let ((a_lo XReg (value_regs_get a 0))
+        (a_hi XReg (value_regs_get a 1))
+        (shift XReg (pulley_xband32_s8 (lo_xreg b) 127))
+        (shift64 XReg (pulley_xband32_s8 shift 63))
+        (inverse XReg (pulley_xsub32 (pulley_xconst8 64) shift64))
+        (zero XReg (pulley_xconst8 0))
+        (is_zero XReg (pulley_xeq32 shift64 zero))
+        (is_wide XReg (pulley_xulteq32 (pulley_xconst8 64) shift))
+        (low XReg (pulley_xshl64 a_lo shift64))
+        (cross XReg
+          (pulley_xselect64 is_zero zero (pulley_xshr64_u a_lo inverse)))
+        (high XReg (pulley_xbor64 (pulley_xshl64 a_hi shift64) cross)))
+    (value_regs
+      (pulley_xselect64 is_wide zero low)
+      (pulley_xselect64 is_wide low high))))
+
 ;; Special-case constant shift amounts.
 (rule 1 (lower (ishl $I32 a b))
   (if-let n (u6_shift_from_iconst b))
@@ -549,6 +566,23 @@
 (rule (lower (ushr $I64 a b))
   (pulley_xshr64_u a (lo_xreg b)))
 
+(rule 2 (lower (ushr $I128 a b))
+  (let ((a_lo XReg (value_regs_get a 0))
+        (a_hi XReg (value_regs_get a 1))
+        (shift XReg (pulley_xband32_s8 (lo_xreg b) 127))
+        (shift64 XReg (pulley_xband32_s8 shift 63))
+        (inverse XReg (pulley_xsub32 (pulley_xconst8 64) shift64))
+        (zero XReg (pulley_xconst8 0))
+        (is_zero XReg (pulley_xeq32 shift64 zero))
+        (is_wide XReg (pulley_xulteq32 (pulley_xconst8 64) shift))
+        (high XReg (pulley_xshr64_u a_hi shift64))
+        (cross XReg
+          (pulley_xselect64 is_zero zero (pulley_xshl64 a_hi inverse)))
+        (low XReg (pulley_xbor64 (pulley_xshr64_u a_lo shift64) cross)))
+    (value_regs
+      (pulley_xselect64 is_wide high low)
+      (pulley_xselect64 is_wide zero high))))
+
 ;; Special-case constant shift amounts.
 (rule 1 (lower (ushr $I32 a b))
   (if-let n (u6_shift_from_iconst b))
@@ -578,6 +612,24 @@
 (rule (lower (sshr $I64 a b))
   (pulley_xshr64_s a (lo_xreg b)))
 
+(rule 2 (lower (sshr $I128 a b))
+  (let ((a_lo XReg (value_regs_get a 0))
+        (a_hi XReg (value_regs_get a 1))
+        (shift XReg (pulley_xband32_s8 (lo_xreg b) 127))
+        (shift64 XReg (pulley_xband32_s8 shift 63))
+        (inverse XReg (pulley_xsub32 (pulley_xconst8 64) shift64))
+        (zero XReg (pulley_xconst8 0))
+        (is_zero XReg (pulley_xeq32 shift64 zero))
+        (is_wide XReg (pulley_xulteq32 (pulley_xconst8 64) shift))
+        (high XReg (pulley_xshr64_s a_hi shift64))
+        (sign XReg (pulley_xshr64_s a_hi (pulley_xconst8 63)))
+        (cross XReg
+          (pulley_xselect64 is_zero zero (pulley_xshl64 a_hi inverse)))
+        (low XReg (pulley_xbor64 (pulley_xshr64_u a_lo shift64) cross)))
+    (value_regs
+      (pulley_xselect64 is_wide high low)
+      (pulley_xselect64 is_wide sign high))))
+
 ;; Special-case constant shift amounts.
 (rule 1 (lower (sshr $I32 a b))
   (if-let n (u6_shift_from_iconst b))
@@ -597,6 +649,12 @@
 
 (rule 0 (lower (band (fits_in_32 _) a b)) (pulley_xband32 a b))
 (rule 1 (lower (band $I64 a b)) (pulley_xband64 a b))
+(rule 7 (lower (band $I128 a b))
+  (let ((a ValueRegs a)
+        (b ValueRegs b))
+    (value_regs
+      (pulley_xband64 (value_regs_get a 0) (value_regs_get b 0))
+      (pulley_xband64 (value_regs_get a 1) (value_regs_get b 1)))))
 
 (rule 3 (lower (band (ty_int (fits_in_32 _)) a (i32_from_iconst b)))
   (pulley_xband32_s32 a b))
@@ -614,6 +672,12 @@
 
 (rule 0 (lower (bor (fits_in_32 _) a b)) (pulley_xbor32 a b))
 (rule 1 (lower (bor $I64 a b)) (pulley_xbor64 a b))
+(rule 7 (lower (bor $I128 a b))
+  (let ((a ValueRegs a)
+        (b ValueRegs b))
+    (value_regs
+      (pulley_xbor64 (value_regs_get a 0) (value_regs_get b 0))
+      (pulley_xbor64 (value_regs_get a 1) (value_regs_get b 1)))))
 
 (rule 3 (lower (bor (ty_int (fits_in_32 _)) a (i32_from_iconst b)))
   (pulley_xbor32_s32 a b))
@@ -631,6 +695,12 @@
 
 (rule 0 (lower (bxor (fits_in_32 _) a b)) (pulley_xbxor32 a b))
 (rule 1 (lower (bxor $I64 a b)) (pulley_xbxor64 a b))
+(rule 7 (lower (bxor $I128 a b))
+  (let ((a ValueRegs a)
+        (b ValueRegs b))
+    (value_regs
+      (pulley_xbxor64 (value_regs_get a 0) (value_regs_get b 0))
+      (pulley_xbxor64 (value_regs_get a 1) (value_regs_get b 1)))))
 
 (rule 3 (lower (bxor (ty_int (fits_in_32 _)) a (i32_from_iconst b)))
   (pulley_xbxor32_s32 a b))
@@ -651,6 +721,12 @@
 
 (rule 1 (lower (bnot $I64 a))
   (pulley_xbnot64 a))
+
+(rule 3 (lower (bnot $I128 a))
+  (let ((a ValueRegs a))
+    (value_regs
+      (pulley_xbnot64 (value_regs_get a 0))
+      (pulley_xbnot64 (value_regs_get a 1)))))
 
 (rule 2 (lower (bnot (ty_vec128 _) a))
   (pulley_vbnot128 a))
@@ -722,6 +798,17 @@
   (pulley_xsub32_u8 (pulley_xclz32 (zext32 a)) 16))
 (rule (lower (clz $I32 a)) (pulley_xclz32 a))
 (rule (lower (clz $I64 a)) (pulley_xclz64 a))
+(rule 1 (lower (clz $I128 a))
+  (let ((lo XReg (value_regs_get a 0))
+        (hi XReg (value_regs_get a 1))
+        (hi_count XReg (pulley_xclz64 hi))
+        (lo_count XReg (pulley_xclz64 lo))
+        (result XReg
+          (pulley_xselect32
+            (pulley_xeq64 hi (pulley_xconst8 0))
+            (pulley_xadd32 hi_count lo_count)
+            hi_count)))
+    (value_regs result (pulley_xconst8 0))))
 
 ;;;; Rules for `popcnt` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1280,13 +1367,14 @@
 ;; i128 stores
 
 (rule 3 (lower (store (mem_flags_data flags) src @ (value_type $I128) addr offset))
+  (if-let offsetp8 (i32_checked_add offset 8))
   (let
     ((src_regs ValueRegs src)
       (src_lo XReg (value_regs_get src_regs 0))
       (src_hi XReg (value_regs_get src_regs 1))
-      (addrp0 XReg addr)
-      (addrp8 Amode (Amode.RegOffset addrp0 8)))
-  (side_effect (emit_store_i128 flags src_lo src_hi (Amode.RegOffset addrp0 0) addrp8))))
+      (addrp0 Amode (amode addr offset))
+      (addrp8 Amode (amode addr offsetp8)))
+  (side_effect (emit_store_i128 flags src_lo src_hi addrp0 addrp8))))
 
 ;; Helper to handle big/little endian to determine which order the lo/hi
 ;; halves of the i128 are stored.

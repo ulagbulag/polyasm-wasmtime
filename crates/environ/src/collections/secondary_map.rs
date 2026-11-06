@@ -76,7 +76,7 @@ where
 
     /// Same as [`cranelift_entity::SecondaryMap::try_insert`].
     pub fn insert(&mut self, k: K, v: V) -> Result<Option<V>, OutOfMemory> {
-        self.inner.try_insert(k, v)
+        self.inner.try_insert(k, v).map_err(Into::into)
     }
 
     /// Same as [`cranelift_entity::SecondaryMap::remove`].
@@ -121,7 +121,7 @@ where
 
     /// Resize the map to have `n` entries by adding default entries as needed.
     pub fn resize(&mut self, n: usize) -> Result<(), OutOfMemory> {
-        self.inner.try_resize(n)
+        self.inner.try_resize(n).map_err(Into::into)
     }
 }
 
