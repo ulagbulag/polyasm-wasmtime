@@ -1,13 +1,16 @@
 //! B+-tree node pool.
 
 #[cfg(test)]
-use super::Comparator;
-use super::{Forest, Node, NodeData};
-use crate::entity::PrimaryMap;
-#[cfg(test)]
 use core::fmt;
 use core::ops::{Index, IndexMut};
-use wasmtime_core::error::OutOfMemory;
+
+use cranelift_bitset::oom::OutOfMemory;
+
+use crate::entity::PrimaryMap;
+
+#[cfg(test)]
+use super::Comparator;
+use super::{Forest, Node, NodeData};
 
 /// A pool of nodes, including a free list.
 pub(super) struct NodePool<F: Forest> {

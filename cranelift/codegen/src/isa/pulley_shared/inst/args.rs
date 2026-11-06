@@ -175,8 +175,11 @@ impl Amode {
                     StackAMode::IncomingArg(offset, stack_args_size) => {
                         let offset = i64::from(*stack_args_size) - *offset;
                         let frame_layout = state.frame_layout();
+                        // PolyASM's `PushFrame` and `PushFrameSave` keep FP
+                        // and LR in the machine and move SP by the frame
+                        // extent alone, so the caller's outgoing arguments
+                        // start right above the clobbers.
                         let sp_offset = frame_layout.tail_args_size
-                            + frame_layout.setup_area_size
                             + frame_layout.clobber_size
                             + frame_layout.fixed_frame_storage_size
                             + frame_layout.outgoing_args_size;

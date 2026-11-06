@@ -1,7 +1,5 @@
 //! Forest of maps.
 
-use super::{Comparator, Forest, INNER_SIZE, Node, NodeData, NodePool, Path};
-use crate::packed_option::PackedOption;
 #[cfg(test)]
 use alloc::string::String;
 #[cfg(test)]
@@ -11,7 +9,12 @@ use core::{
     mem,
     ops::{Bound, RangeBounds},
 };
-use wasmtime_core::{alloc::PanicOnOom as _, error::OutOfMemory};
+
+use cranelift_bitset::oom::{OutOfMemory, PanicOnOom as _};
+
+use crate::packed_option::PackedOption;
+
+use super::{Comparator, Forest, INNER_SIZE, Node, NodeData, NodePool, Path};
 
 /// Tag type defining forest types for a map.
 struct MapTypes<K, V>(PhantomData<(K, V)>);

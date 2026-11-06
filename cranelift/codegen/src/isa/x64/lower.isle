@@ -4337,6 +4337,12 @@
 (rule 3 (lower (bitcast (is_xmm_type _) _ x @ (value_type (is_xmm_type _))))
       x)
 
+;; A float bitcast of an integer load loads the float into its XMM register.
+(rule 4 (lower (has_type $F64 (bitcast _ _ (and (sinkable_load src) (value_type $I64)))))
+      (x64_movsd_load src))
+(rule 4 (lower (has_type $F32 (bitcast _ _ (and (sinkable_load src) (value_type $I32)))))
+      (x64_movss_load src))
+
 ;; Rules for `fcopysign` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule (lower (fcopysign $F32 a @ (value_type $F32) b))

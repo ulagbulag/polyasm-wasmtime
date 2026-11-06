@@ -13,6 +13,7 @@
 extern crate alloc;
 
 pub mod compound;
+pub mod oom;
 pub mod scalar;
 
 pub use compound::CompoundBitSet;

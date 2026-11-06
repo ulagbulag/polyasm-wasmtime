@@ -63,7 +63,7 @@ pub fn compile<B: LowerBackend + TargetIsa>(
             RegallocAlgorithm::SinglePass => Algorithm::Fastalloc,
         };
 
-        regalloc2::run_with_ctx(&vcode, vcode.abi.machine_env(), &options, regalloc_ctx)
+        super::regalloc_order::run(&vcode, vcode.abi.machine_env(), &options, b.flags().regalloc_integer_order(), regalloc_ctx)
             .map_err(|err| {
                 log::error!(
                     "Register allocation error for vcode\n\

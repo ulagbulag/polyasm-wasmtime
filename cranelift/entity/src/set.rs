@@ -1,11 +1,11 @@
 //! Densely numbered entity references as set keys.
 
-use crate::EntityRef;
-use crate::keys::Keys;
 use core::fmt;
 use core::marker::PhantomData;
-use cranelift_bitset::CompoundBitSet;
-use wasmtime_core::error::OutOfMemory;
+
+use cranelift_bitset::{CompoundBitSet, oom::OutOfMemory};
+
+use crate::{EntityRef, keys::Keys};
 
 /// A set of `K` for densely indexed entity references.
 ///

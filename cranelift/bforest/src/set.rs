@@ -1,13 +1,16 @@
 //! Forest of sets.
 
-use super::{Comparator, Forest, INNER_SIZE, Node, NodeData, NodePool, Path, SetValue};
-use crate::packed_option::PackedOption;
 #[cfg(test)]
 use alloc::string::String;
 #[cfg(test)]
 use core::fmt;
 use core::marker::PhantomData;
-use wasmtime_core::{alloc::PanicOnOom, error::OutOfMemory};
+
+use cranelift_bitset::oom::{OutOfMemory, PanicOnOom};
+
+use crate::packed_option::PackedOption;
+
+use super::{Comparator, Forest, INNER_SIZE, Node, NodeData, NodePool, Path, SetValue};
 
 /// Tag type defining forest types for a set.
 struct SetTypes<K>(PhantomData<K>);
